@@ -215,6 +215,32 @@ func RecursionSearch(context *context, v_g uint64, v_s uint64) int {
 	if _, ok := context.path[v_g]; ok {
 		return 0
 	}
+	if *induced {
+		if !*directed {
+			for v_g_prime := range context.Graph[v_g].neighborhood {
+				if v_s_prime, ok := context.path[v_g_prime]; ok {
+					if _, ok := context.Subgraph[v_s].neighborhood[v_s_prime]; !ok {
+						return 0
+					}
+				}
+			}
+		} else {
+			for v_g_prime := range context.Graph[v_g].neighborhood_out {
+				if v_s_prime, ok := context.path[v_g_prime]; ok {
+					if _, ok := context.Subgraph[v_s].neighborhood_out[v_s_prime]; !ok {
+						return 0
+					}
+				}
+			}
+			for v_g_prime := range context.Graph[v_g].neighborhood_in {
+				if v_s_prime, ok := context.path[v_g_prime]; ok {
+					if _, ok := context.Subgraph[v_s].neighborhood_in[v_s_prime]; !ok {
+						return 0
+					}
+				}
+			}
+		}
+	}
 	if len(context.Subgraph) == (len(context.chosen) + 1) {
 		context.path[v_g] = v_s
 		output_file.WriteString(fmt.Sprintf("%v\n", context.path))
@@ -238,7 +264,13 @@ func RecursionSearch(context *context, v_g uint64, v_s uint64) int {
 		fmt.Println("depth", len(context.chosen), "target size", len(context.restrictions[new_v_s]), "open", len(context.restrictions))
 		//functionality
 		for u_instance := range context.restrictions[new_v_s] {
+            /*if ret == 1 {
+                return ret
+            }*/
 			ret += RecursionSearch(context, u_instance, new_v_s)
+			/* if ret == 1 {
+                return ret
+            }*/
 		}
 		// ret += MinRestrictionsCall(Graph, Subgraph, restrictions, path, chosen)
 	}
@@ -359,7 +391,7 @@ func ColoredNeighborhood(Graph graph, u uint64, c uint32, deg int) map[uint64]vo
 	output := make(map[uint64]void)
 	for v := range Graph[u].neighborhood {
 		if Graph[v].attribute.color == c {
-			if (!(*induced) && deg <= len(Graph[v].neighborhood)) || deg == len(Graph[v].neighborhood) { //if not induced allow the easier way
+			if deg <= len(Graph[v].neighborhood) {
 				output[v] = void{}
 			}
 		}
@@ -371,7 +403,7 @@ func ColoredNeighborhoodOut(Graph graph, u uint64, c uint32, deg int) map[uint64
 	output := make(map[uint64]void)
 	for v := range Graph[u].neighborhood_out {
 		if Graph[v].attribute.color == c {
-			if (!(*induced) && deg <= len(Graph[v].neighborhood_out)) || deg == len(Graph[v].neighborhood_out) { //if not induced allow the easier way
+			if deg <= len(Graph[v].neighborhood_out) {
 				output[v] = void{}
 			}
 		}
@@ -383,7 +415,7 @@ func ColoredNeighborhoodIn(Graph graph, u uint64, c uint32, deg int) map[uint64]
 	output := make(map[uint64]void)
 	for v := range Graph[u].neighborhood_in {
 		if Graph[v].attribute.color == c {
-			if (!(*induced) && deg <= len(Graph[v].neighborhood_in)) || deg == len(Graph[v].neighborhood_in) { //if not induced allow the easier way
+			if deg <= len(Graph[v].neighborhood_in) {
 				output[v] = void{}
 			}
 		}
